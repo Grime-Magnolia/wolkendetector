@@ -1,3 +1,4 @@
+#!/bin/python
 import requests
 import datetime
 import matplotlib.pyplot as plt
@@ -12,22 +13,23 @@ def fetch_and_process_data(url, debug=False):
     if debug:
         print(f"Status code: {response.status_code}")
         print(f"Response preview: {response.text[:200]}")
-    
+    nonstriped_lines = lines = [x for x in response.text.split("\n")]
     lines = [x for x in response.text.split("\n") if "#" not in x and x]
     data = []
     time_data = []
     highest = (0, -1)
     start_night = end_night = 0
-
+    name = nonstriped_lines[5].split('_')[-1]
+    print(name)
     for i, line in enumerate(lines):
         parts = line.split(';')
         entry = {
-            "UTC time+date": parts[0],
-            "Temperatuur": float(parts[2]),
+            "local-timestamp": parts[1],
+            "Temperature": float(parts[2]),
             "Frequency": float(parts[4]),
             "MSAS": float(parts[5])
         }
-        time_data.append(datetime.datetime.strptime(entry["UTC time+date"], "%Y-%m-%dT%H:%M:%S.%f"))
+        time_data.append(datetime.datetime.strptime(entry["local-timestamp"], "%Y-%m-%dT%H:%M:%S.%f"))
         data.append(entry)
         
         if start_night == 0 and entry["MSAS"] != 0:
@@ -103,7 +105,7 @@ def plot_data(data, time_data, average, average_offset, start_night, end_night, 
     ax.xaxis.set_major_locator(mdates.HourLocator(interval=2))
     fig.autofmt_xdate()
 
-    ax.set_xlabel('Time (UTC)')
+    ax.set_xlabel('Local Time')
     ax.set_ylabel('MSAS')
     ax.set_title('MSAS Over Time')
     plt.legend()
